@@ -10,14 +10,15 @@ public class BoardCreator : MonoBehaviour
 
     public int columns = 100;
     public int rows = 100;
-    public IntRange numRooms = new IntRange(4,5);
+    public IntRange numRooms = new IntRange(2,3);
     public IntRange roomWidth = new IntRange(3,10);
-    public IntRange roomHeight = new IntRange(3, 10);
+    public IntRange roomHeight = new IntRange(3, 9);
     public IntRange corridorLength = new IntRange(6, 10);
     public GameObject[] floorTiles;
     public GameObject[] wallTiles;
     public GameObject[] outerWallTiles;
     public GameObject player;
+    public GameObject exit;
 
     private TileType[][] tiles;
     private Room[] rooms;
@@ -27,14 +28,14 @@ public class BoardCreator : MonoBehaviour
     
     private void Start()
     {
-        boardHolder = new GameObject("BoardHolder");
+        /*boardHolder = new GameObject("BoardHolder");
         SetupTilesArray();
         CreateRoomsAndCorridor();
         SetTilesValuesForRooms();
         SetTilesValuesForCorridors();
 
         InstatiateTiles();
-        InstantiateOuterWalls();
+        InstantiateOuterWalls();*/
     }
 
     void SetupTilesArray(){
@@ -42,7 +43,6 @@ public class BoardCreator : MonoBehaviour
         for(int i = 0 ; i < tiles.Length; i++){
             tiles[i] = new TileType[rows];
         }
-
     }
 
     void CreateRoomsAndCorridor(){
@@ -54,6 +54,9 @@ public class BoardCreator : MonoBehaviour
         corridors[0] = new Corridor();
 
         rooms[0].SetupRoom(roomWidth, roomHeight, columns, rows);
+
+        Debug.Log(rooms[0].xPos + " " + rooms[0].yPos);
+       
         corridors[0].SetupCorridor(rooms[0], corridorLength, roomWidth, roomHeight, columns, rows, true);
 
         for (int i = 1; i < rooms.Length; i++)
@@ -66,12 +69,14 @@ public class BoardCreator : MonoBehaviour
                 corridors[i].SetupCorridor(rooms[i], corridorLength, roomWidth, roomHeight, columns, rows, false);
             }
 
-            if(i == rooms.Length *.5f){
-                Vector3 playerPos = new Vector3(rooms[i].xPos, rooms[i].yPos, 0);
-                Instantiate(player, playerPos, Quaternion.identity);
+            // Instantiate exit in the last room
+            if(i == rooms.Length - 1){
+                Vector3 exitPos = new Vector3(rooms[i].xPos, rooms[i].yPos, 0);
+                Instantiate(exit, exitPos, Quaternion.identity);
             }
         }
-
+        Vector3 playerPos = new Vector3(rooms[0].xPos, rooms[0].yPos, 0);
+        Instantiate(player, playerPos, Quaternion.identity);
     }
 
     void SetTilesValuesForRooms(){
@@ -113,7 +118,6 @@ public class BoardCreator : MonoBehaviour
                         xCoord -= j;
                         break;        
                 }
-
                 tiles[xCoord][yCoord] = TileType.Floor;
             }
         }
@@ -164,6 +168,43 @@ public class BoardCreator : MonoBehaviour
         Vector3 pos = new Vector3(xCoord, yCoord, 0);
         GameObject tileInstance = Instantiate(prefabs[randomIndex], pos, Quaternion.identity) as GameObject;
         tileInstance.transform.parent = boardHolder.transform;
-
     }
+
+    public void SetupLevelDifficulty(int level){
+        numRooms = new IntRange(numRooms.m_Min + level ,numRooms.m_Max + level);
+    }
+
+    public void SetupScene(int level){
+        ClearScene();
+        // Setup all the data according to the current level
+        SetupLevelDifficulty(level);
+
+        boardHolder = new GameObject("BoardHolder");
+        Debug.Log("Level " + level + " min " + numRooms.m_Min + " max " + numRooms.m_Max);
+
+        SetupTilesArray();
+        CreateRoomsAndCorridor();
+        SetTilesValuesForRooms();
+        SetTilesValuesForCorridors();
+        InstatiateTiles();
+        InstantiateOuterWalls();
+
+        //FollowPlayer.instance.UpdateFollowPlayer(GameObject.FindGameObjectWithTag("Player"));
+    }
+
+    private void ClearScene(){
+        if(boardHolder){
+            Destroy(boardHolder.gameObject);
+        }
+        if(GameObject.FindGameObjectWithTag("Exit")){
+            Destroy(GameObject.FindGameObjectWithTag("Exit").gameObject);
+        }
+        if(GameObject.FindGameObjectWithTag("Player")){
+            Destroy(GameObject.FindGameObjectWithTag("Player").gameObject);
+        }
+    }
+
+
+
+
 }
